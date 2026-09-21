@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bill #{{ bill.id }} - POS Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; font-family: 'Courier New', monospace; }
+        .receipt { max-width: 400px; margin: 0 auto; }
+        .receipt-header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+        .receipt-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #ccc; }
+        .receipt-total { border-top: 2px double #000; padding-top: 10px; margin-top: 10px; font-weight: bold; }
+        .receipt-footer { text-align: center; margin-top: 20px; border-top: 2px dashed #000; padding-top: 10px; }
+        .text-center { text-align: center; }
+        .fw-bold { font-weight: bold; }
+        .border-bottom { border-bottom: 1px solid #000; }
+        .d-flex { display: flex; }
+        .justify-content-between { justify-content: space-between; }
+        @media print {
+            body * { visibility: hidden; }
+            .receipt, .receipt * { visibility: visible; }
+            .receipt { position: absolute; left: 0; top: 0; width: 100%; max-width: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <div class="receipt-header">
+            <h3>{{ settings.shop_name if settings else 'POS MANAGEMENT SYSTEM' }}</h3>
+            {% if settings and settings.shop_address %}
+            <p>{{ settings.shop_address }}</p>
+            {% endif %}
+            {% if settings and settings.shop_phone %}
+            <p>Phone: {{ settings.shop_phone }}</p>
+            {% endif %}
+            {% if settings and settings.gst_number %}
+            <p>GST: {{ settings.gst_number }}</p>
+            {% endif %}
+            <p>Retail Store Bill</p>
+        </div>
+        
+        <div class="receipt-details">
+            <p><strong>Bill No:</strong> {{ bill.id }}</p>
+            <p><strong>Date:</strong> {{ bill.bill_date.strftime('%d-%b-%Y %H:%M') }}</p>
+            <p><strong>Customer:</strong> {{ bill.customer.name }} ({{ bill.customer.phone }})</p>
+        </div>
+        
+        <div class="receipt-items" style="margin-top: 20px;">
+            <div class="d-flex justify-content-between fw-bold border-bottom pb-2 mb-2">
+                <span>ITEM</span>
+                <span>QTY</span>
+                <span>PRICE</span>
+                <span>AMOUNT</span>
+            </div>
+            {% for item in bill.items %}
+            <div class="receipt-item">
+                <span>{{ item.product.name }}</span>
+                <span>{{ item.quantity }}</span>
+                <span>{{ settings.currency_symbol if settings else '₹' }}{{ "%.2f"|format(item.price) }}</span>
+                <span>{{ settings.currency_symbol if settings else '₹' }}{{ "%.2f"|format(item.price * item.quantity) }}</span>
+            </div>
+            {% endfor %}
+            
+            {% if settings and settings.tax_rate > 0 %}
+            <div class="receipt-item">
+                <span>Subtotal</span>
+                <span></span>
+                <span></span>
+                <span>{{ settings.currency_symbol }}{{ "%.2f"|format(bill.total_amount / (1 + settings.tax_rate / 100)) }}</span>
+            </div>
+            <div class="receipt-item">
+                <span>Tax ({{ settings.tax_rate }}%)</span>
+                <span></span>
+                <span></span>
+                <span>{{ settings.currency_symbol }}{{ "%.2f"|format(bill.total_amount - (bill.total_amount / (1 + settings.tax_rate / 100))) }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="receipt-total d-flex justify-content-between mt-2 pt-2">
+                <span>GRAND TOTAL</span>
+                <span>{{ settings.currency_symbol if settings else '₹' }}{{ "%.2f"|format(bill.total_amount) }}</span>
+            </div>
+        </div>
+        
+        <div class="receipt-footer">
+            <p>{{ settings.receipt_footer if settings else 'Thank you for shopping! *** Visit Again ***' }}</p>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <button onclick="window.print()" class="btn btn-primary">
+            <i class="bi bi-printer me-1"></i>Print
+        </button>
+        <a href="{{ url_for('bills') }}" class="btn btn-secondary ms-2">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
+    
+    <script>
+        window.onload = function() { window.print(); }
+    </script>
+</body>
+</html>

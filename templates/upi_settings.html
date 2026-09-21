@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <h2 class="h3 mb-4">Shop Settings</h2>
+    
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-shop me-2"></i>Shop Information
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Shop Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="shop_name" value="{{ settings.shop_name if settings else 'My Shop' }}" required>
+                            <div class="form-text">This will appear on all receipts</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <textarea class="form-control" name="shop_address" rows="2">{{ settings.shop_address if settings else '' }}</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="text" class="form-control" name="shop_phone" value="{{ settings.shop_phone if settings else '' }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">GST Number</label>
+                            <input type="text" class="form-control" name="gst_number" value="{{ settings.gst_number if settings else '' }}">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>Save Shop Info
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-credit-card me-2"></i>UPI & Receipt Settings
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">UPI ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="upi_id" value="{{ settings.upi_id if settings else '' }}" placeholder="e.g., shop@ybl" required>
+                            <div class="form-text">QR code will be generated for this UPI ID</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Currency Symbol</label>
+                            <select class="form-select" name="currency_symbol">
+                                <option value="₹" {% if settings and settings.currency_symbol == '₹' %}selected{% endif %}>₹ (INR)</option>
+                                <option value="$" {% if settings and settings.currency_symbol == '$' %}selected{% endif %}>$ (USD)</option>
+                                <option value="€" {% if settings and settings.currency_symbol == '€' %}selected{% endif %}>€ (EUR)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Tax Rate (%)</label>
+                            <input type="number" step="0.1" class="form-control" name="tax_rate" value="{{ settings.tax_rate if settings else 0 }}" min="0" max="100">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Receipt Footer</label>
+                            <textarea class="form-control" name="receipt_footer" rows="2">{{ settings.receipt_footer if settings else 'Thank you for shopping! *** Visit Again ***' }}</textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save me-2"></i>Save All Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

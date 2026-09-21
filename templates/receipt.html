@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">Receipt #{{ bill.id }}</h2>
+        <div>
+            <a href="{{ url_for('print_bill', bill_id=bill.id) }}" class="btn btn-primary me-2">
+                <i class="bi bi-printer me-2"></i>Print
+            </a>
+            <a href="{{ url_for('pos') }}" class="btn btn-success">
+                <i class="bi bi-plus-lg me-2"></i>New Sale
+            </a>
+        </div>
+    </div>
+    
+    <div class="receipt">
+        <div class="receipt-header">
+            <h3 class="h4 mb-2">{{ settings.shop_name if settings else 'POS MANAGEMENT SYSTEM' }}</h3>
+            {% if settings and settings.shop_address %}
+            <p class="mb-1 text-muted small">{{ settings.shop_address }}</p>
+            {% endif %}
+            {% if settings and settings.shop_phone %}
+            <p class="mb-1 text-muted small">Phone: {{ settings.shop_phone }}</p>
+            {% endif %}
+            {% if settings and settings.gst_number %}
+            <p class="mb-1 text-muted small">GST: {{ settings.gst_number }}</p>
+            {% endif %}
+            <p class="mb-0 text-muted small">Retail Store Bill</p>
+        </div>
+        
+        <div class="receipt-details mb-3">
+            <div class="d-flex justify-content-between">
+                <span class="text-muted">Bill No</span>
+                <span class="fw-bold">#{{ bill.id }}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span class="text-muted">Date</span>
+                <span>{{ bill.bill_date.strftime('%d-%b-%Y %H:%M') }}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span class="text-muted">Customer</span>
+                <span>{{ bill.customer.name }}</span>
+            </div>
+        </div>
+        
+        <div class="receipt-items">
+            <div class="d-flex justify-content-between fw-bold border-bottom pb-2 mb-2 small text-muted">
+                <span style="flex: 2;">ITEM</span>
+                <span style="flex: 0.5; text-align: center;">QTY</span>
+                <span style="flex: 1; text-align: right;">PRICE</span>
+                <span style="flex: 1; text-align: right;">AMT</span>
+            </div>
+            {% for item in bill.items %}
+            <div class="d-flex justify-content-between py-2" style="border-bottom: 1px dotted var(--border);">
+                <span style="flex: 2;">{{ item.product.name }}</span>
+                <span style="flex: 0.5; text-align: center;">{{ item.quantity }}</span>
+                <span style="flex: 1; text-align: right;">{{ settings.currency_symbol if settings else '₹' }}{{ "%.2f"|format(item.price) }}</span>
+                <span style="flex: 1; text-align: right; font-weight: 600;">{{ settings.currency_symbol if settings else '₹' }}{{ "%.2f"|format(item.price * item.quantity) }}</span>
+            </div>
+            {% endfor %}
+            
+            {% if settings and settings.tax_rate > 0 %}
+            <div class="d-flex justify-content-between py-2">
+                <span>Subtotal</span>
+                <span>{{ settings.currency_symbol }}{{ "%.2f"|format(bill.total_amount / (1 + settings.tax_rate / 100)) }}</span>
+            </div>
+            <div class="d-flex justify-content-between py-2">
+                <span>Tax ({{ settings.tax_rate }}%)</span>
+                <span>{{ settings.currency_symbol }}{{ "%.2f"|format(bill.total_amount - (bill.total_amount / (1 + settings.tax_rate / 100))) }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="receipt-total d-flex justify-content-between mt-3 pt-2">
+                <span>TOTAL</span>
+                <span class="text-primary">{{ settings.currency_symbol if settings else '₹' }}{{ "%.2f"|format(bill.total_amount) }}</span>
+            </div>
+        </div>
+        
+        <div class="receipt-footer mt-3">
+            <p class="mb-0 text-muted">{{ settings.receipt_footer if settings else 'Thank you for shopping! *** Visit Again ***' }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

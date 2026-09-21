@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">Inventory</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+            <i class="bi bi-plus-lg me-2"></i>Add Product
+        </button>
+    </div>
+    
+    <!-- Mobile Cards View -->
+    <div class="d-md-none">
+        {% for product in products %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="fw-bold">{{ product.name }}</div>
+                        <small class="text-muted">{{ product.category.name if product.category else '' }}</small>
+                    </div>
+                    <span class="badge {% if product.stock < 50 %}badge-low-stock{% elif product.stock < 100 %}badge-medium-stock{% else %}badge-good-stock{% endif %}">
+                        {{ product.stock }} left
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-primary fw-bold fs-5">₹{{ "%.2f"|format(product.price) }}</span>
+                    <small class="text-muted">{{ product.supplier.name if product.supplier else '' }}</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-primary flex-fill" data-bs-toggle="modal" data-bs-target="#editModal{{ product.id }}">
+                        <i class="bi bi-pencil me-1"></i>Edit
+                    </button>
+                    <a href="{{ url_for('delete_product', id=product.id) }}" class="btn btn-sm btn-danger flex-fill" onclick="return confirm('Are you sure?')">
+                        <i class="bi bi-trash me-1"></i>Delete
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Edit Modal -->
+        <div class="modal fade" id="editModal{{ product.id }}" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Product</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="POST" action="{{ url_for('update_product', id=product.id) }}">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Product Name</label>
+                                <input type="text" class="form-control" name="name" value="{{ product.name }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Category</label>
+                                <select class="form-select" name="category_id" required>
+                                    {% for cat in categories %}
+                                    <option value="{{ cat.id }}" {% if cat.id == product.category_id %}selected{% endif %}>{{ cat.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Supplier</label>
+                                <select class="form-select" name="supplier_id" required>
+                                    {% for sup in suppliers %}
+                                    <option value="{{ sup.id }}" {% if sup.id == product.supplier_id %}selected{% endif %}>{{ sup.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Price (₹)</label>
+                                <input type="number" step="0.01" class="form-control" name="price" value="{{ product.price }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Stock</label>
+                                <input type="number" class="form-control" name="stock" value="{{ product.stock }}" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Desktop Table View -->
+    <div class="card d-none d-md-block">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td class="fw-semibold">{{ product.name }}</td>
+                            <td>{{ product.category.name if product.category else 'N/A' }}</td>
+                            <td class="fw-bold">₹{{ "%.2f"|format(product.price) }}</td>
+                            <td>
+                                <span class="badge {% if product.stock < 50 %}badge-low-stock{% elif product.stock < 100 %}badge-medium-stock{% else %}badge-good-stock{% endif %}">
+                                    {{ product.stock }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ product.id }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <a href="{{ url_for('delete_product', id=product.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_product') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="category_id" required>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Supplier</label>
+                        <select class="form-select" name="supplier_id" required>
+                            {% for sup in suppliers %}
+                            <option value="{{ sup.id }}">{{ sup.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Price (₹)</label>
+                        <input type="number" step="0.01" class="form-control" name="price" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stock</label>
+                        <input type="number" class="form-control" name="stock" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">Dashboard</h2>
+        <a href="{{ url_for('pos') }}" class="btn btn-primary">
+            <i class="bi bi-cart-plus me-2"></i>New Sale
+        </a>
+    </div>
+    
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card stat-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="stat-label">Products</div>
+                    <div class="stat-value">{{ total_products }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-6 col-md-3">
+            <div class="card stat-card bg-success text-white">
+                <div class="card-body">
+                    <div class="stat-label">Customers</div>
+                    <div class="stat-value">{{ total_customers }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-6 col-md-3">
+            <div class="card stat-card bg-info text-white">
+                <div class="card-body">
+                    <div class="stat-label">Bills</div>
+                    <div class="stat-value">{{ total_bills }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-6 col-md-3">
+            <div class="card stat-card bg-warning text-white">
+                <div class="card-body">
+                    <div class="stat-label">Low Stock</div>
+                    <div class="stat-value">{{ low_stock_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clock-history me-2"></i>Recent Bills</span>
+                    <a href="{{ url_for('bills') }}" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Bill</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bill in recent_bills %}
+                                <tr>
+                                    <td class="fw-semibold">#{{ bill.id }}</td>
+                                    <td>{{ bill.customer.name }}</td>
+                                    <td class="fw-bold">₹{{ "%.2f"|format(bill.total_amount) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-center py-4 text-muted">No bills yet</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-trophy me-2"></i>Best Sellers
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Sold</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product, total_sold in best_sellers %}
+                                <tr>
+                                    <td>{{ product }}</td>
+                                    <td class="fw-bold">{{ total_sold }} units</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="2" class="text-center py-4 text-muted">No data yet</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

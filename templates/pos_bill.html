@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <h2 class="h3 mb-3">Review Bill</h2>
+    
+    <!-- Customer Selection -->
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <label class="form-label small text-uppercase text-muted fw-bold">Customer</label>
+            <select class="form-select" id="customerSelect">
+                <option value="">-- Walk-in Customer --</option>
+                {% for customer in customers %}
+                <option value="{{ customer.id }}">{{ customer.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <!-- Cart Items -->
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Order Summary</span>
+            <a href="/pos" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-plus-lg me-1"></i>Add More
+            </a>
+        </div>
+        <div class="card-body p-0" id="cartItemsContainer">
+            <div class="text-center py-5 text-muted empty-state">
+                <i class="bi bi-cart-x d-block" style="font-size: 3rem; opacity: 0.3;"></i>
+                <p class="mt-3 mb-0">No items in cart</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Total and Checkout -->
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <span class="text-muted fw-semibold">Total Amount</span>
+                <span class="h2 mb-0 fw-bold text-primary" id="cartTotal">₹0.00</span>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/pos" class="btn btn-outline-secondary flex-fill">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </a>
+                <button class="btn btn-success flex-fill btn-lg" id="checkoutBtn" onclick="checkout()">
+                    <i class="bi bi-check-circle me-2"></i>Pay Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+function renderCart() {
+    const container = document.getElementById('cartItemsContainer');
+    const totalEl = document.getElementById('cartTotal');
+    
+    let total = 0;
+    let count = 0;
+    
+    if (cart.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5 text-muted empty-state">
+                <i class="bi bi-cart-x d-block" style="font-size: 3rem; opacity: 0.3;"></i>
+                <p class="mt-3 mb-0">No items in cart</p>
+            </div>
+        `;
+    } else {
+        let html = '';
+        cart.forEach(function(item) {
+            const itemTotal = item.price * item.quantity;
+            total += itemTotal;
+            count += item.quantity;
+            
+            html += `
+                <div class="p-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-fill">
+                            <div class="fw-bold">${item.name}</div>
+                            <small class="text-muted">₹${item.price.toFixed(2)} each</small>
+                        </div>
+                        <div class="fw-bold text-primary ms-2">₹${itemTotal.toFixed(2)}</div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="updateQuantity(${item.product_id}, -1)">-</button>
+                            <span class="fw-bold" style="min-width: 30px; text-align: center;">${item.quantity}</span>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="updateQuantity(${item.product_id}, 1)">+</button>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="removeItem(${item.product_id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+    
+    totalEl.textContent = `₹${total.toFixed(2)}`;
+}
+
+function updateQuantity(productId, change) {
+    const item = cart.find(function(item) { return item.product_id === productId; });
+    if (!item) return;
+    
+    const newQuantity = item.quantity + change;
+    if (newQuantity <= 0) {
+        removeItem(productId);
+        return;
+    }
+    
+    item.quantity = newQuantity;
+    localStorage.setItem('cart', JSON.stringify(cart));
+    renderCart();
+}
+
+function removeItem(productId) {
+    cart = cart.filter(function(item) { return item.product_id !== productId; });
+    localStorage.setItem('cart', JSON.stringify(cart));
+    renderCart();
+}
+
+function checkout() {
+    const customerId = document.getElementById('customerSelect').value;
+    
+    if (!customerId) {
+        alert('Please select or create a customer!');
+        return;
+    }
+    
+    if (cart.length === 0) {
+        alert('Cart is empty!');
+        return;
+    }
+    
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    checkoutBtn.disabled = true;
+    checkoutBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+    
+    fetch('/api/create-bill', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            customer_id: parseInt(customerId),
+            items: cart
+        })
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            localStorage.removeItem('cart');
+            window.location.href = data.redirect;
+        } else {
+            alert('Error: ' + data.message);
+            checkoutBtn.disabled = false;
+            checkoutBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Pay Now';
+        }
+    })
+    .catch(function(error) {
+        alert('Error: ' + error.message);
+        checkoutBtn.disabled = false;
+        checkoutBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Pay Now';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    renderCart();
+});
+</script>
+{% endblock %}

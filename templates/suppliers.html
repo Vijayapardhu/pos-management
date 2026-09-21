@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">Suppliers</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+            <i class="bi bi-plus-lg me-2"></i>Add Supplier
+        </button>
+    </div>
+    
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Supplier</th>
+                            <th class="d-none d-sm-table-cell">Phone</th>
+                            <th>Products</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for supplier in suppliers %}
+                        <tr>
+                            <td class="fw-semibold">{{ supplier.name }}</td>
+                            <td class="text-muted d-none d-sm-table-cell">{{ supplier.phone or 'N/A' }}</td>
+                            <td>{{ supplier.products|length }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="3" class="text-center py-5 text-muted">No suppliers yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Supplier Modal -->
+<div class="modal fade" id="addSupplierModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Supplier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_supplier') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Supplier Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control" name="phone">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

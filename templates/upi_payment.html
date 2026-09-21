@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h5 class="mb-0">Pay with UPI</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <h6 class="text-muted">Amount to Pay</h6>
+                        <h2 class="text-primary fw-bold">{{ settings.currency_symbol if settings else '₹' }}{{ "%.2f"|format(bill.total_amount) }}</h2>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <img src="{{ url_for('static', filename=qr_path) }}" alt="UPI QR Code" class="img-fluid" style="max-width: 250px;">
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <p class="mb-1"><strong>Scan to Pay</strong></p>
+                        <p class="mb-0">UPI ID: <strong>{{ settings.upi_id }}</strong></p>
+                        <p class="mb-0">{{ settings.shop_name if settings else 'My Shop' }}</p>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="/payment-success/{{ bill.id }}" class="btn btn-success btn-lg">
+                            <i class="bi bi-check-circle me-2"></i>Payment Done
+                        </a>
+                        <a href="/" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

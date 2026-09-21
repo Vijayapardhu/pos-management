@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <h2 class="h3 mb-3">New Sale - Select Products</h2>
+    
+    <!-- Customer Selection Bar -->
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <div class="row g-2 align-items-center">
+                <div class="col">
+                    <select class="form-select" id="customerSelect">
+                        <option value="">-- Walk-in Customer --</option>
+                        {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#newCustomerForm">
+                        <i class="bi bi-person-plus me-1"></i>New
+                    </button>
+                </div>
+            </div>
+            
+            <div class="collapse mt-3" id="newCustomerForm">
+                <div class="card card-body py-3">
+                    <div class="row g-2">
+                        <div class="col">
+                            <input type="text" class="form-control" id="newCustomerName" placeholder="Customer name">
+                        </div>
+                        <div class="col">
+                            <input type="text" class="form-control" id="newCustomerPhone" placeholder="Phone (optional)">
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-primary" onclick="addNewCustomer()">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search and Filter -->
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <div class="row g-2">
+                <div class="col">
+                    <input type="text" class="form-control" id="productSearch" placeholder="🔍 Search products..." onkeyup="searchProducts()">
+                </div>
+                <div class="col-auto">
+                    <select class="form-select" id="categoryFilter" onchange="filterByCategory()">
+                        <option value="all">All Categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.name }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Products Grid -->
+    <div class="row g-3" id="productsGrid">
+        {% for product in products %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="card product-card" 
+                 data-category="{{ product.category.name if product.category else '' }}" 
+                 data-product-id="{{ product.id }}"
+                 onclick="toggleProduct({{ product.id }}, this)">
+                <div class="card-body">
+                    <div class="fw-bold mb-1">{{ product.name }}</div>
+                    <small class="text-muted d-block mb-3">{{ product.category.name if product.category else '' }}</small>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-primary fs-5">₹{{ "%.2f"|format(product.price) }}</span>
+                        <span class="badge {% if product.stock < 50 %}badge-low-stock{% elif product.stock < 100 %}badge-medium-stock{% else %}badge-good-stock{% endif %}">
+                            {{ product.stock }}
+                        </span>
+                    </div>
+                </div>
+                <div class="selection-indicator">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Cart Summary Bar -->
+    <div class="cart-summary-bar">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <small class="text-muted">Cart</small>
+                <div class="fw-bold">
+                    <span id="cartCount">0</span> items · 
+                    <span id="cartTotal">₹0.00</span>
+                </div>
+            </div>
+            <a href="/pos/bill" class="btn btn-success btn-lg">
+                <i class="bi bi-arrow-right me-2"></i>View Bill
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+function toggleProduct(productId, element) {
+    const card = element;
+    const existingItem = cart.find(item => item.product_id === productId);
+    
+    if (existingItem) {
+        cart = cart.filter(item => item.product_id !== productId);
+        card.classList.remove('selected');
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartSummary();
+    } else {
+        fetch('/api/products')
+            .then(response => response.json())
+            .then(products => {
+                const product = products.find(p => p.id === productId);
+                if (!product || product.stock <= 0) return;
+                
+                cart.push({
+                    product_id: productId,
+                    name: product.name,
+                    price: product.price,
+                    quantity: 1,
+                    max_stock: product.stock
+                });
+                card.classList.add('selected');
+                localStorage.setItem('cart', JSON.stringify(cart));
+                updateCartSummary();
+            });
+    }
+}
+
+function updateCartSummary() {
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+    
+    document.getElementById('cartCount').textContent = count;
+    document.getElementById('cartTotal').textContent = `₹${total.toFixed(2)}`;
+}
+
+function addNewCustomer() {
+    const name = document.getElementById('newCustomerName').value.trim();
+    const phone = document.getElementById('newCustomerPhone').value.trim();
+    
+    if (!name) {
+        alert('Please enter customer name');
+        return;
+    }
+    
+    fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const select = document.getElementById('customerSelect');
+            const option = new Option(data.customer.name, data.customer.id);
+            select.add(option);
+            select.value = data.customer.id;
+            
+            document.getElementById('newCustomerName').value = '';
+            document.getElementById('newCustomerPhone').value = '';
+            
+            const collapse = bootstrap.Collapse.getInstance(document.getElementById('newCustomerForm'));
+            if (collapse) collapse.hide();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+}
+
+function searchProducts() {
+    const searchTerm = document.getElementById('productSearch').value.toLowerCase();
+    const cards = document.querySelectorAll('.product-card');
+    
+    cards.forEach(card => {
+        const name = card.querySelector('.fw-bold').textContent.toLowerCase();
+        card.style.display = name.includes(searchTerm) ? 'block' : 'none';
+    });
+}
+
+function filterByCategory() {
+    const category = document.getElementById('categoryFilter').value;
+    const cards = document.querySelectorAll('.product-card');
+    
+    cards.forEach(card => {
+        const cardCategory = card.dataset.category;
+        card.style.display = (category === 'all' || cardCategory === category) ? 'block' : 'none';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateCartSummary();
+});
+</script>
+{% endblock %}

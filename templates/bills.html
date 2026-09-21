@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">Bills</h2>
+        <a href="{{ url_for('pos') }}" class="btn btn-success">
+            <i class="bi bi-plus-lg me-2"></i>New Sale
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Bill</th>
+                            <th>Customer</th>
+                            <th class="d-none d-sm-table-cell">Date</th>
+                            <th class="d-none d-md-table-cell">Items</th>
+                            <th>Amount</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in bills %}
+                        <tr>
+                            <td class="fw-semibold">#{{ bill.id }}</td>
+                            <td>{{ bill.customer.name }}</td>
+                            <td class="d-none d-sm-table-cell text-muted">{{ bill.bill_date.strftime('%d-%m-%Y') }}</td>
+                            <td class="d-none d-md-table-cell text-muted">{{ bill.items|length }}</td>
+                            <td class="fw-bold">₹{{ "%.2f"|format(bill.total_amount) }}</td>
+                            <td>
+                                <a href="{{ url_for('bill_detail', bill_id=bill.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('print_bill', bill_id=bill.id) }}" class="btn btn-sm btn-outline-secondary d-none d-sm-inline">
+                                    <i class="bi bi-printer"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center py-5 text-muted">No bills yet. Start selling!</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
