@@ -533,4 +533,4 @@ if __name__ == '__main__':
             if not get_upi_settings():
                 db.session.add(UPISettings(upi_id='shop@upi', shop_name='My Shop'))
                 db.session.commit()
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
